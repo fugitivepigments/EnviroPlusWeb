@@ -128,18 +128,18 @@ log.disabled = True
 run_flag = True
 
 # Get the temperature of the CPU for compensation
-def get_cpu_temperature():
+
+def get_cpu_temperature(smoothing:int = 5) -> None:
+    """Return smoothed cpu temperature"""
     with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
-        temp = f.read()
-        temp = int(temp) / 1000.0
-    return temp
+        return mean([int(f.read())/1000.0] * int(smoothing))
 
 def read_data(time):
 
     #adds in compensation for temp
     cpu_temp = get_cpu_temperature()
     raw_temp = bme280.get_temperature()
-    temp_factor = 1.25
+    temp_factor = 1.5
     temperature = raw_temp - ((cpu_temp - raw_temp) / temp_factor)
     temp_F = (temperature * 1.8) + 32
 
@@ -262,10 +262,6 @@ def background():
 background_thread = threading.Thread(target = background)
 
 
-def get_cpu_temperature(smoothing:int = 5) -> None:
-    """Return smoothed cpu temperature"""
-    with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
-        return mean([f.read()] * int(smoothing)) / 1000.0
 
 @app.route('/')
 def index():
